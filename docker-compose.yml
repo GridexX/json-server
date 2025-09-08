@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  json-server:
+    build: .
+    container_name: json-server
+    ports:
+      - "3000:3000"
+    volumes:
+      # Use named volume to persist database changes (won't create host directory)
+      - json-server-data:/data
+      # Mount local routes file if you want to customize routes
+      - ./routes.json:/data/routes.json:ro
+      # Mount authentication middleware
+      - ./data/auth-middleware.js:/data/auth-middleware.js:ro
+    environment:
+      - NODE_ENV=production
+      - JSON_SERVER_HOST=0.0.0.0
+      - JSON_SERVER_PORT=3000
+      - JSON_SERVER_OPTIONS=--middlewares /data/auth-middleware.js
+      # Example API keys for authentication (comma-separated)
+      # - JSON_SERVER_API_KEYS=dev-key-123,prod-key-123
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Optional: Add a simple web UI to interact with the API
+  json-server-ui:
+    image: nginx:alpine
+    container_name: json-server-ui
+    ports:
+      - "8080:80"
+    volumes:
+      - ./public:/usr/share/nginx/html:ro
+    depends_on:
+      - json-server
+    restart: unless-stopped
+
+networks:
+  default:
+    name: json-server-network
+
+volumes:
+  json-server-data:
+    driver: local

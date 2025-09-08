@@ -1,0 +1,3 @@
+{
+    "/posts/author/:authorId": "/posts?author=:authorId"
+}
